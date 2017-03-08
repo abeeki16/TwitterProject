@@ -1,0 +1,271 @@
+# GOA Python, Mr. I
+# Ajit Beeki & Sam Bernstein
+# Sam Bernstein's end
+
+import statistics
+import pickle
+
+
+while True: # keep asking for directory until a valid one is entered
+    try:
+        print("Which computer are you working on, Sam or Ajits: ")
+
+        try:
+            choice=int(input("1.Sam\n2.Ajit\n3.Other\nEnter your choice here: "))
+        except ValueError:
+            choice = 3
+
+        if choice != 1 and choice != 2:
+            file_path=input("Enter in your file path: ")
+        else:
+            secondChoice=input("Which test pickle would you like to use: ")
+            if (int(choice)==1):
+                file_path = "/Users/samebernstein/Dropbox/GOA Python Weeks 9&10/test"+secondChoice+".pkl"
+            elif(int(choice)==2):
+                file_path="/home/tija/Downloads/Dropbox/GOA Python Weeks 9&10/test"+secondChoice+".pkl"
+            
+
+        #file_path = input("Enter file path: ")
+
+        file = open(file_path, "rb")
+        break
+    except FileNotFoundError:
+        print()
+        print("File not found. Please try again.")
+        print()
+
+
+
+tweets = pickle.load(file)
+file.close()
+
+print()
+print("There are", len(tweets), " tweets in the file.")
+print()
+## Earliest date/time for the tweets in the file (Ajit, put your code below)
+
+##using a list in case there are multiple tweets with the same date and time
+earliestTweets=[{"timestamp_ms":99999999999999999999999999}]
+latestTweets=[{"timestamp_ms":0}]
+for tweet in tweets:
+    timePassed=int(tweet["timestamp_ms"])
+    
+    if (timePassed<int(earliestTweets[0]["timestamp_ms"])):
+        earliestTweets=[tweet]
+    elif (timePassed==int(earliestTweets[0]["timestamp_ms"])):
+        earliestTweets.append(tweet)
+    elif (timePassed>int(latestTweets[0]["timestamp_ms"])):
+        latestTweets=[tweet]
+    elif (timePassed==int(latestTweets[0]["timestamp_ms"])):
+        latestTweets.append(tweet)
+
+    #These lines are for testing and for visualizing what is going on.
+    #print("Current tweet timestamp ",tweet["timestamp_ms"])
+    #print("Current tweet dateTime ",tweet["created_at"])
+    #print("Earliest tweed date: ",earliestTweets[0]["timestamp_ms"])
+    #print("Latest tweet date: ",latestTweets[0]["timestamp_ms"])
+
+print("Date and time of earliest tweeted tweets:")
+for tweet in earliestTweets:
+    print(tweet["created_at"])
+print("Date and time of latest tweeted tweets:")
+for tweet in latestTweets:
+    print(tweet["created_at"])
+print()
+
+## Longest tweet(s) length
+"""
+What is the length of the longest tweet text in the file?
+What is the user name and what is the screen_name for the user who wrote the
+longest tweet in the file?  (If ithere is more than one tweet of that length,
+you can choose to write out the user name and screen name for any one of
+those tweets, or for all of them, if you'd prefer)
+"""
+max_len = 0
+user_name = ''
+screen_name = ''
+longestTweets = [{'length':max_len,'user_name':user_name, 'screen_name':screen_name}] # a list for storing the info for the longest tweet(s)
+
+for tweet in tweets:
+    length_of_the_tweet = len(tweet['text'])
+    if length_of_the_tweet > longestTweets[0]['length']:
+        user_name = tweet['user']['name']
+        screen_name = tweet['user']['screen_name']
+        longestTweets = [{'length':length_of_the_tweet,'user_name':user_name, 'screen_name':screen_name}] # if longer, replace information
+    elif length_of_the_tweet == longestTweets[0]['length']:
+        user_name = tweet['user']['name']
+        screen_name = tweet['user']['screen_name']
+        longestTweets.append({'length':length_of_the_tweet,'user_name':user_name, 'screen_name':screen_name}) # if equal length, add information
+
+if len(longestTweets) > 1:    # a grammatical nicety
+    print("The longest tweets are:")
+else:
+    print("The longest tweet is:")
+
+for tweet in longestTweets:
+    print(str(tweet['length']), " characters long by", tweet['user_name']+".","Their screen name is", tweet['screen_name']) # print info for longest tweet(s)
+
+
+"""
+After printing the summary data, your program should go into a loop
+that asks the user to select a tweet (using a number), and select a
+field (you can choose which fields to include, but there have to be
+at least ten choices, and those choices have to include, at a minimum,
+the user's name, the user's screen_name, the text of the tweet,
+and the date/time it was created).   Inside this loop, print out the
+data that the user selected.
+
+Include some mechanism for the user to end the loop...your
+choice of what makes most sense.
+"""
+# sets for separately storing all the keys for the main tweet dict and the user dict
+tweet_set = set() 
+user_set  = set()
+
+# dictionaries that store the keys for the tweet_set and the user_set as numbered keys. Of the form { index_number_int : key}
+tweet_numbers = {}
+user_numbers = {}
+
+def retrieve_tweet_data(index): # this part is in a function solely for the ability to break out at any point using return.
+
+    tweet = tweets[index] # save the tweet in question as "tweet" for use in this function
+    
+    numbers_index = 1
+    
+    for key in tweet:
+        if key != 'user':
+            tweet_set.add(key) # compile all the keys for the tweet into a set
+            
+            tweet_numbers[numbers_index] = key
+            numbers_index += 1
+
+    
+    for us_key in tweet['user']:
+        user_set.add(us_key) # compile all the keys for the user dict (within the tweet dict) into a set
+        
+        user_numbers[numbers_index] = us_key
+        numbers_index += 1
+        
+    print("Here are the fields to choose from:\n")
+    
+    def print_options(options):           
+        for k in options:
+            print(str(k)+". "+str(options[k]))
+        print()
+        
+    print_options(tweet_numbers)
+    print_options(user_numbers)
+    
+    both = tweet_set & user_set # stores the intersection of the tweet keys and the user keys (the conflicting keys that are in both)
+
+    while True:
+        while True:
+            is_number = False
+            field = input("Enter a field by name or by number:")
+            in_tweet_set = field in tweet_set
+            in_user_set = field in user_set
+            try:
+                int_field = int(field)
+                if int_field == -1:
+                    return -1
+                elif int_field == -2:
+                    return -2
+                elif 1 <= int_field <= len(tweet_numbers) + len(user_numbers): # if field is int but not == -1 or -2, make sure it is within range
+                    is_number = True
+                    field = int_field # convert field to an int here
+                    break
+            except ValueError:
+                pass
+            
+            # if entered field is not in int form, check to see if it's a valid dict key                                       
+            if not(in_tweet_set or in_user_set):
+                print("That wasn't an option. Please try again.")
+            elif field in both: # handle the field belonging to both dictionaries
+                print("It turns out that field exists for both the tweet and the user. Please choose which one.")
+                print("1. tweet\n2. user")
+                
+                while True:
+                    try:
+                        selection = int(input())
+                        break
+                    except ValueError:
+                        print("That wasn't an integer. Please try again.")
+                
+                in_user_set = selection >= 2
+                break
+            else:
+                break
+        print()
+        
+        # handles both cases where the entered field is an int or the literal string of the key desired
+        if is_number:
+            if field > len(tweet_numbers):
+                print(tweet['user'][user_numbers[field]])
+            else:
+                print(tweet[tweet_numbers[field]])
+        else:
+            if in_user_set:
+                print(tweet['user'][field])
+            else:
+                print(tweet[field])
+                
+        print()
+
+    return 0
+
+
+def select_tweet(): # this part is in a function solely for the ability to break out at any point using return.
+    print()
+    
+    while True: # must select an integer within range
+        try:
+            number = int(input("Specify a tweet by a number between 1 and "+str(len(tweets))+":"))
+            
+            if number == -1 or number == -2: # break out of entire loop
+                return -1
+            elif not(1 <= number <= len(tweets)):
+                print("That number was out of range. Please try again.")
+            else:
+                break
+        except ValueError:
+            print("That wasn't an integer. Please try again.")
+                
+    print()
+    number = number - 1 # decrements entered indices to actual indices of tweets in list
+
+    while True:
+        status = retrieve_tweet_data(number)
+        if status == -1:
+            break
+        elif status == -2:
+            return -1
+
+    return 0
+    
+print("\n"*1)
+print("-"*70)
+print("Beginning tweet data retrieval loop.\nIf at any point you wish to exit a loop, enter -1.")
+print("If at any point you wish to exit the program, enter -2.")
+print()
+
+# this while loop as the "main" for the data retrieval part of the program. select_tweet() asks the user to select a tweet, and once a tweet is selected,
+# retrieve_tweet_data is run in a loop to keep retrieving data for that tweet until the user breaks back out to select a different tweet by
+# entering -1. At any point entering -2 exits the entire program.
+while True:
+    if select_tweet() <= -1: 
+        break
+    
+print("Data retrieval exited.")
+
+
+      
+
+
+
+
+
+
+
+
+
+
